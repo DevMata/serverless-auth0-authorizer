@@ -11,18 +11,18 @@ provider:
   lambdaHashingVersion: '20201221'
   environment:
     AUTH0_PUBLIC_KEY: ${file(secret.pem)}
+  httpApi:
+    cors: true
 
 functions:
   auth:
     handler: src/handlers/auth.handler
-    cors: true
   publicEndpoint:
     handler: src/handlers/public.handler
     events:
       - httpApi:
           path: '/public'
           method: POST
-          cors: true
   privateEndpoint:
     handler: src/handlers/private.handler
     events:
@@ -30,7 +30,6 @@ functions:
           path: '/private'
           method: POST
           authorizer: auth
-          cors: true
 
 resources:
   Resources:
