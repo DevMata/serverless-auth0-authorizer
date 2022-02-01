@@ -1,19 +1,19 @@
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 
 // By default, API Gateway authorizations are cached (TTL) for 300 seconds.
 // This policy will authorize all requests to the same API Gateway instance where the
 // request is coming from, thus being efficient and optimising costs.
-const generatePolicy = (principalId, methodArn) => {
-  const apiGatewayWildcard = methodArn.split('/', 2).join('/') + '/*';
+const generatePolicy = (principalId, routeArn) => {
+  const apiGatewayWildcard = routeArn.split("/", 2).join("/") + "/*";
 
   return {
     principalId,
     policyDocument: {
-      Version: '2012-10-17',
+      Version: "2012-10-17",
       Statement: [
         {
-          Action: 'execute-api:Invoke',
-          Effect: 'Allow',
+          Action: "execute-api:Invoke",
+          Effect: "Allow",
           Resource: apiGatewayWildcard,
         },
       ],
@@ -21,23 +21,23 @@ const generatePolicy = (principalId, methodArn) => {
   };
 };
 
-export async function handler(event, context) {
-  if (!event.authorizationToken) {
-    throw 'Unauthorized';
+export async function handler(event, _) {
+  if (!event.headers.authorization) {
+    throw "Unauthorized";
   }
 
-  const token = event.authorizationToken.replace('Bearer ', '');
+  const token = event.headers.authorization.replace("Bearer ", "");
 
   try {
     const claims = jwt.verify(token, process.env.AUTH0_PUBLIC_KEY);
-    const policy = generatePolicy(claims.sub, event.methodArn);
+    const policy = generatePolicy(claims.sub, event.routeArn);
 
     return {
       ...policy,
-      context: claims
+      context: claims,
     };
   } catch (error) {
     console.log(error);
-    throw 'Unauthorized';
+    throw "Unauthorized";
   }
-};
+}

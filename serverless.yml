@@ -9,51 +9,35 @@ provider:
   runtime: nodejs12.x
   memorySize: 128
   lambdaHashingVersion: '20201221'
+  region: 'us-east-1'
   environment:
     AUTH0_PUBLIC_KEY: ${file(secret.pem)}
   httpApi:
     cors: true
+    authorizers:
+      customAuthorizer:
+        type: request
+        functionName: authorizer-function
 
 functions:
-  auth:
-    handler: src/handlers/auth.handler
-  publicEndpoint:
+  public-endpoint:
     handler: src/handlers/public.handler
     events:
       - httpApi:
           path: '/public'
           method: POST
-  privateEndpoint:
+
+  private-endpoint:
     handler: src/handlers/private.handler
     events:
       - httpApi:
           path: '/private'
           method: POST
-          authorizer: auth
+          authorizer:
+            name: customAuthorizer
 
-resources:
-  Resources:
-    # This response is needed for custom authorizer failures cors support ¯\_(ツ)_/¯
-    GatewayResponse:
-      Type: 'AWS::ApiGateway::GatewayResponse'
-      Properties:
-        ResponseParameters:
-          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
-          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
-        ResponseType: EXPIRED_TOKEN
-        RestApiId:
-          Ref: 'ApiGatewayRestApi'
-        StatusCode: '401'
-    AuthFailureGatewayResponse:
-      Type: 'AWS::ApiGateway::GatewayResponse'
-      Properties:
-        ResponseParameters:
-          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
-          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
-        ResponseType: UNAUTHORIZED
-        RestApiId:
-          Ref: 'ApiGatewayRestApi'
-        StatusCode: '401'
+  authorizer-function:
+    handler: src/handlers/auth.handler
 
 custom:
   bundle:
